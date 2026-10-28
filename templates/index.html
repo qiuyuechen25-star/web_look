@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web 日志安全分析平台</title>
+
+    <!-- ECharts 图表库：需要浏览器能够访问 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #f1f5f9;
+            color: #1e293b;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        header {
+            background: #172554;
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #0000000d;
+            min-width: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            background: #eff6ff;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .number {
+            font-size: 26px;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #1d4ed8;
+        }
+
+        input, button { padding: 10px; margin: 8px 8px 8px 0; }
+
+        button {
+            border: 0;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        .chart {
+            width: 100%;
+            height: 300px;
+        }
+
+        .error { color: #b91c1c; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            min-width: 750px;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-wrap: anywhere;
+        }
+
+        th { background: #f8fafc; }
+
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Web 日志安全分析平台</h1>
+    <p>访问趋势 · 来源统计 · HTTP 状态码 · 请求方法</p>
+</header>
+
+<section class="panel">
+    <h2>① 导入访问日志</h2>
+    <p>支持常见 Nginx / Apache combined 格式，最大 32 MB。</p>
+
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="logfile" accept=".log" required>
+        <button type="submit">上传并分析</button>
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if filename %}
+        <p>当前文件：{{ filename }}</p>
+    {% endif %}
+</section>
+
+{% if stats %}
+<section class="panel">
+    <h2>② 分析概览</h2>
+    <div class="stat-grid">
+        <div class="stat">
+            总请求数
+            <div class="number">{{ stats.total_requests }}</div>
+        </div>
+        <div class="stat">
+            独立 IP 数
+            <div class="number">{{ stats.unique_ips }}</div>
+        </div>
+        <div class="stat">
+            独立 URL 数
+            <div class="number">{{ stats.unique_urls }}</div>
+        </div>
+    </div>
+
+    <p>原始非空行数：{{ total_lines }}；
+       成功解析：{{ parsed_count }}；
+       解析失败：{{ failed_lines }}</p>
+</section>
+
+<div class="grid">
+    <section class="panel">
+        <h3>③ 访问量趋势（按小时）</h3>
+        <div id="trend" class="chart"></div>
+    </section>
+
+    <section class="panel">
+        <h3>④ Top 10 来源 IP</h3>
+        <div id="ips" class="chart"></div>
+    </section>
+
+    <section class="panel">
+        <h3>⑤ Top 10 请求 URL</h3>
+        <div id="urls" class="chart"></div>
+    </section>
+
+    <section class="panel">
+        <h3>⑥ HTTP 状态码分布</h3>
+        <div id="statuses" class="chart"></div>
+    </section>
+
+    <section class="panel">
+        <h3>⑦ 请求方法分布</h3>
+        <div id="methods" class="chart"></div>
+    </section>
+</div>
+
+<section class="panel">
+    <h2>⑧ 解析明细（最多 100 条）</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>来源 IP</th>
+                    <th>时间</th>
+                    <th>方法</th>
+                    <th>URL</th>
+                    <th>状态码</th>
+                    <th>User-Agent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in records %}
+                <tr>
+                    <td>{{ row.ip }}</td>
+                    <td>{{ row.time }}</td>
+                    <td>{{ row.method }}</td>
+                    <td>{{ row.url }}</td>
+                    <td>{{ row.status if row.status is not none else "-" }}</td>
+                    <td>{{ row.user_agent }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+    // 使用 Jinja 的 tojson 安全传递后端统计数据
+    const stats = {{ stats | tojson }};
+
+    function createChart(elementId, option) {
+        const element = document.getElementById(elementId);
+        const chart = echarts.init(element);
+        chart.setOption(option);
+        window.addEventListener("resize", () => chart.resize());
+    }
+
+    createChart("trend", {
+        tooltip: { trigger: "axis" },
+        grid: { left: 45, right: 20, top: 25, bottom: 65 },
+        xAxis: {
+            type: "category",
+            data: stats.hourly.map(x => x.time),
+            axisLabel: { rotate: 30 }
+        },
+        yAxis: { type: "value", name: "请求数" },
+        series: [{
+            name: "访问量",
+            type: "line",
+            smooth: true,
+            areaStyle: { opacity: 0.12 },
+            data: stats.hourly.map(x => x.count)
+        }]
+    });
+
+    function createBarChart(id, rows, horizontal) {
+        const data = horizontal ? [...rows].reverse() : rows;
+
+        createChart(id, {
+            tooltip: { trigger: "axis" },
+            grid: { left: 90, right: 25, top: 20, bottom: 35 },
+            xAxis: horizontal
+                ? { type: "value" }
+                : { type: "category", data: data.map(x => x.name),
+                    axisLabel: { rotate: 25, interval: 0 } },
+            yAxis: horizontal
+                ? { type: "category", data: data.map(x => x.name) }
+                : { type: "value" },
+            series: [{
+                type: "bar",
+                data: data.map(x => x.count),
+                barMaxWidth: 32
+            }]
+        });
+    }
+
+    createBarChart("ips", stats.top_ips, true);
+    createBarChart("urls", stats.top_urls, true);
+
+    createChart("statuses", {
+        tooltip: { trigger: "item" },
+        legend: { bottom: 0 },
+        series: [{
+            type: "pie",
+            radius: ["35%", "68%"],
+            center: ["50%", "43%"],
+            data: stats.statuses.map(x => ({
+                name: x.name,
+                value: x.count
+            })),
+            label: { formatter: "{b}: {c}" }
+        }]
+    });
+
+    createChart("methods", {
+        tooltip: { trigger: "axis" },
+        grid: { left: 45, right: 20, top: 25, bottom: 35 },
+        xAxis: {
+            type: "category",
+            data: stats.methods.map(x => x.name)
+        },
+        yAxis: { type: "value", name: "请求数" },
+        series: [{
+            type: "bar",
+            data: stats.methods.map(x => x.count),
+            barMaxWidth: 45
+        }]
+    });
+</script>
+{% endif %}
+</body>
+</html>
