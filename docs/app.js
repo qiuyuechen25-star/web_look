@@ -496,6 +496,9 @@
         renderHBars('urls', s.top_urls);
         renderMethods(s.methods);
 
+        setupFold('anomalyFold', 'anomalyToggle', 'anomalyTable', s.anomalies.length);
+        setupFold('recordFold', 'recordToggle', 'recordTable', preview.length);
+
         $('filename').textContent = '当前文件：' + filename;
         $('emptyState').hidden = true;
         $('result').hidden = false;
@@ -504,6 +507,34 @@
             charts.forEach(function (item) { item.chart.resize(); });
         });
         $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 明细表折叠：超过 10 行时显示展开/收起按钮
+    function setupFold(wrapId, toggleId, tableId, total) {
+        const wrap = $(wrapId);
+        const toggle = $(toggleId);
+        const table = $(tableId);
+        if (!wrap || !toggle || !table) return;
+        const hidden = Math.max(0, total - 10);
+        wrap.classList.remove('fold-open-wrap');
+        table.classList.remove('fold-open');
+        if (hidden <= 0) {
+            toggle.style.display = 'none';
+            return;
+        }
+        toggle.style.display = 'flex';
+        toggle.querySelector('.fold-label').textContent = '展开全部（还有 ' + hidden + ' 条）';
+        const apply = function () {
+            const open = table.classList.toggle('fold-open');
+            wrap.classList.toggle('fold-open-wrap', open);
+            toggle.querySelector('.fold-label').textContent = open
+                ? '收起明细'
+                : '展开全部（还有 ' + hidden + ' 条）';
+        };
+        toggle.onclick = apply;
+        toggle.onkeydown = function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apply(); }
+        };
     }
 
     function showError(message) {

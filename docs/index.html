@@ -297,6 +297,21 @@ body {
 .vfill { width: 62%; max-width: 48px; height: 0; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, var(--cyan), var(--primary)); transition: height .8s cubic-bezier(.2,.8,.2,1); }
 .vlbl { margin-top: 9px; font-size: 11px; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+
+/* ---------- 明细折叠 ---------- */
+.fold-table tbody tr:nth-child(n+11) { display: none; }
+.fold-table.fold-open tbody tr:nth-child(n+11) { display: table-row; }
+.fold-bar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 12px; padding: 9px; cursor: pointer; user-select: none;
+    border: 1px dashed var(--border-strong); border-radius: 10px;
+    color: var(--primary-2); font-size: 12px; font-weight: 600;
+    background: var(--primary-soft); transition: .18s ease;
+}
+.fold-bar:hover { border-color: var(--cyan); }
+.fold-bar .chev { display: inline-block; transition: transform .2s ease; }
+.fold-open-wrap .fold-bar .chev { transform: rotate(180deg); }
+
 /* ---------- 表格 ---------- */
 .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
 table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 12px; }
@@ -474,22 +489,32 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
                 </div>
             </div>
             <p class="summary-line" id="anomalySummary" style="margin:0 0 14px"></p>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>风险</th><th>命中规则</th><th>时间</th><th>来源 IP</th><th>方法</th><th>URL</th><th>状态</th><th>判定依据</th></tr></thead>
-                    <tbody id="anomalyBody"></tbody>
-                </table>
+            <div class="fold-wrap" id="anomalyFold">
+                <div class="table-wrap">
+                    <table class="fold-table" id="anomalyTable">
+                        <thead><tr><th>风险</th><th>命中规则</th><th>时间</th><th>来源 IP</th><th>方法</th><th>URL</th><th>状态</th><th>判定依据</th></tr></thead>
+                        <tbody id="anomalyBody"></tbody>
+                    </table>
+                </div>
+                <div class="fold-bar" id="anomalyToggle" role="button" tabindex="0">
+                    <span class="fold-label">展开全部</span><span class="chev">⌄</span>
+                </div>
             </div>
         </section>
 
         <section class="card">
             <div class="card-head"><h2>解析明细</h2><span class="tag">STEP 03</span></div>
             <p class="summary-line" id="recordSummary" style="margin:0 0 14px"></p>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>来源 IP</th><th>时间</th><th>方法</th><th>URL</th><th>状态码</th><th>User-Agent</th></tr></thead>
-                    <tbody id="recordBody"></tbody>
-                </table>
+            <div class="fold-wrap" id="recordFold">
+                <div class="table-wrap">
+                    <table class="fold-table" id="recordTable">
+                        <thead><tr><th>来源 IP</th><th>时间</th><th>方法</th><th>URL</th><th>状态码</th><th>User-Agent</th></tr></thead>
+                        <tbody id="recordBody"></tbody>
+                    </table>
+                </div>
+                <div class="fold-bar" id="recordToggle" role="button" tabindex="0">
+                    <span class="fold-label">展开全部</span><span class="chev">⌄</span>
+                </div>
             </div>
         </section>
     </div>

@@ -296,6 +296,21 @@ body {
 .vfill { width: 62%; max-width: 48px; height: 0; border-radius: 7px 7px 2px 2px; background: linear-gradient(180deg, var(--cyan), var(--primary)); transition: height .8s cubic-bezier(.2,.8,.2,1); }
 .vlbl { margin-top: 9px; font-size: 11px; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+
+/* ---------- 明细折叠 ---------- */
+.fold-table tbody tr:nth-child(n+11) { display: none; }
+.fold-table.fold-open tbody tr:nth-child(n+11) { display: table-row; }
+.fold-bar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 12px; padding: 9px; cursor: pointer; user-select: none;
+    border: 1px dashed var(--border-strong); border-radius: 10px;
+    color: var(--primary-2); font-size: 12px; font-weight: 600;
+    background: var(--primary-soft); transition: .18s ease;
+}
+.fold-bar:hover { border-color: var(--cyan); }
+.fold-bar .chev { display: inline-block; transition: transform .2s ease; }
+.fold-open-wrap .fold-bar .chev { transform: rotate(180deg); }
+
 /* ---------- 表格 ---------- */
 .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
 table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 12px; }
@@ -484,8 +499,9 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
             基于规则库识别敏感路径探测、注入载荷、扫描器 UA、危险方法、服务端错误、目录扫描与高频访问；
             共命中 <b>{{ stats.anomaly_total }}</b> 条，下表展示前 <b>{{ stats.anomalies|length }}</b> 条。
         </p>
+        <div class="fold-wrap" id="anomalyFold">
         <div class="table-wrap">
-            <table>
+            <table class="fold-table" id="anomalyTable">
                 <thead>
                     <tr>
                         <th>风险</th><th>命中规则</th><th>时间</th><th>来源 IP</th>
@@ -517,14 +533,21 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
                 </tbody>
             </table>
         </div>
+        {% if stats.anomalies|length > 10 %}
+        <div class="fold-bar" id="anomalyToggle" role="button" tabindex="0">
+            <span class="fold-label">展开全部（还有 {{ stats.anomalies|length - 10 }} 条）</span><span class="chev">⌄</span>
+        </div>
+        {% endif %}
+        </div>
     </section>
 
     <!-- 05 解析明细 -->
     <section class="card">
         <div class="card-head"><h2>解析明细</h2><span class="tag">STEP 03</span></div>
         <p class="summary-line" style="margin:0 0 14px">共解析 {{ parsed_count }} 条记录，此处展示前 {{ records|length }} 条。</p>
+        <div class="fold-wrap" id="recordFold">
         <div class="table-wrap">
-            <table>
+            <table class="fold-table" id="recordTable">
                 <thead><tr><th>来源 IP</th><th>时间</th><th>方法</th><th>URL</th><th>状态码</th><th>User-Agent</th></tr></thead>
                 <tbody>
                     {% for row in records %}
@@ -546,6 +569,12 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        {% if records|length > 10 %}
+        <div class="fold-bar" id="recordToggle" role="button" tabindex="0">
+            <span class="fold-label">展开全部（还有 {{ records|length - 10 }} 条）</span><span class="chev">⌄</span>
+        </div>
+        {% endif %}
         </div>
     </section>
     {% else %}
@@ -579,6 +608,27 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
         localStorage.setItem('loglens-theme', next);
         syncThemeIcon();
     });
+
+    /* ---------- 明细折叠 ---------- */
+    function bindFold(toggleId, wrapId, tableId) {
+        const toggle = document.getElementById(toggleId);
+        if (!toggle) return;
+        const wrap = document.getElementById(wrapId);
+        const table = document.getElementById(tableId);
+        const label = toggle.querySelector('.fold-label');
+        const original = label.textContent;
+        const apply = function () {
+            const open = table.classList.toggle('fold-open');
+            wrap.classList.toggle('fold-open-wrap', open);
+            label.textContent = open ? '收起明细' : original;
+        };
+        toggle.addEventListener('click', apply);
+        toggle.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apply(); }
+        });
+    }
+    bindFold('anomalyToggle', 'anomalyFold', 'anomalyTable');
+    bindFold('recordToggle', 'recordFold', 'recordTable');
 
     /* ---------- 上传交互 ---------- */
     const drop = document.getElementById('drop');
