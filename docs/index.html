@@ -395,6 +395,7 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
             <input type="file" id="logfile" name="logfile" accept=".log" hidden>
             <div class="upload-bar">
                 <button type="submit" class="btn btn-primary" id="submitBtn">开始分析</button>
+                <a class="btn btn-ghost" href="logs/stress_10000.log" download="stress_10000.log">↓ 下载 10000 条日志 (.log)</a>
                 <span class="file-chip" id="filename"></span>
             </div>
         </form>
@@ -496,6 +497,6 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
 
 <footer>纯前端静态版 · 基于 GitHub Pages 托管 · 所有解析与检测均在浏览器本地完成</footer>
 <script src="echarts.min.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

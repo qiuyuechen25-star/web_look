@@ -566,7 +566,8 @@
         });
         input.addEventListener('change', showName);
 
-        $('uploadForm').addEventListener('submit', function () {
+        $('uploadForm').addEventListener('submit', function (e) {
+            e.preventDefault();
             if (!input.files || !input.files[0]) return;
             submitBtn.disabled = true;
             submitBtn.textContent = '分析中…';
