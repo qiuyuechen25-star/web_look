@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "description": "异常检测规则库。可在此文件中增删关键字与调整阈值，无需改动检测代码。",
+  "sensitive_paths": [
+    ".env", ".git", ".svn", ".ds_store", ".aws",
+    "/admin", "wp-login", "wp-admin", "phpmyadmin", "pma/",
+    "/config", "/backup", "/shell", "/etc/passwd",
+    "actuator", "swagger", "phpinfo", "administrator",
+    "manager/html", "xmlrpc.php", "web.config", "database.sql"
+  ],
+  "attack_signatures": [
+    "union select", "or 1=1", "' or ", "\" or ", "' and ", "\" and ",
+    "%20union%20select", "union+select", "%20or%201=1", "%27%20or",
+    "../", "..\\", "%2e%2e", "<script", "%3cscript", "sleep(",
+    "benchmark(", "waitfor delay", "xp_cmdshell", "into outfile",
+    "load_file(", "%00", "/etc/passwd", "cmd=", "exec(", "--"
+  ],
+  "scanner_uas": [
+    "sqlmap", "nikto", "nmap", "masscan", "acunetix", "nessus",
+    "openvas", "wpscan", "dirbuster", "gobuster", "hydra",
+    "scanner", "hackbar", "python-requests", "python-urllib",
+    "go-http-client", "curl/", "wget/", "libwww-perl", "httpie",
+    "httpx", "fuzz"
+  ],
+  "risky_methods": ["PUT", "DELETE", "TRACE", "CONNECT", "PATCH"],
+  "thresholds": {
+    "high_freq_min_count": 20,
+    "high_freq_min_ratio": 0.15,
+    "scan_404_threshold": 5,
+    "client_error_rate": 0.30,
+    "server_error_rate": 0.05,
+    "error_rate_min_requests": 20
+  },
+  "rule_levels": {
+    "敏感路径探测": "高危",
+    "注入攻击特征": "高危",
+    "扫描器 UA": "中危",
+    "可疑请求方法": "中危",
+    "服务端错误": "中危",
+    "4xx 错误率异常": "中危",
+    "5xx 错误率异常": "高危",
+    "疑似目录扫描": "中危",
+    "高频访问": "低危"
+  }
+}
