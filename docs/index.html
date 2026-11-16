@@ -465,7 +465,13 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
         </div>
 
         <section class="card">
-            <div class="card-head"><h2>异常检测明细</h2><span class="tag">STEP 02</span></div>
+            <div class="card-head">
+                <h2>异常检测明细</h2>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <button class="btn btn-ghost" id="exportBtn" type="button" style="padding:7px 14px;font-size:12px">↓ 导出 CSV</button>
+                    <span class="tag">STEP 02</span>
+                </div>
+            </div>
             <p class="summary-line" id="anomalySummary" style="margin:0 0 14px"></p>
             <div class="table-wrap">
                 <table>

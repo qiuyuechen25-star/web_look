@@ -233,6 +233,37 @@
     /* ---------------- 图表渲染 ---------------- */
     const EMPTY = '<div class="chart-empty">暂无数据</div>';
     const charts = [];
+    let currentAnomalies = [];
+
+    function csvCell(value) {
+        const text = String(value === null || value === undefined ? '' : value);
+        return '"' + text.replace(/"/g, '""') + '"';
+    }
+
+    function exportCSV() {
+        if (!currentAnomalies.length) {
+            alert('当前没有异常记录可导出');
+            return;
+        }
+        const header = ['风险等级', '命中规则', '时间', '来源IP', '请求方法',
+                        'URL', '状态码', 'User-Agent', '判定依据'];
+        const lines = [header.map(csvCell).join(',')];
+        currentAnomalies.forEach(function (a) {
+            lines.push([
+                a.level, a.rules.join('、'), a.time, a.ip, a.method,
+                a.url, a.status === null ? '' : a.status, a.user_agent, a.detail
+            ].map(csvCell).join(','));
+        });
+        const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'loglens_anomalies.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 
     function themeColors() {
         const s = getComputedStyle(document.documentElement);
@@ -396,6 +427,7 @@
 
     function fillResult(parsed, filename, totalLines) {
         const s = analyze(parsed.records);
+        currentAnomalies = s.anomalies;
 
         $('kpiTotal').textContent = s.total_requests;
         $('kpiIps').textContent = s.unique_ips;
@@ -493,6 +525,8 @@
         window.addEventListener('resize', function () {
             charts.forEach(function (item) { item.chart.resize(); });
         });
+
+        $('exportBtn').addEventListener('click', exportCSV);
 
         const input = $('logfile');
         const drop = $('drop');

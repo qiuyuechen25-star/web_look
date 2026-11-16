@@ -475,7 +475,13 @@ footer { text-align: center; color: var(--faint); font-size: 11px; padding: 8px 
 
     <!-- 04 异常明细 -->
     <section class="card">
-        <div class="card-head"><h2>异常检测明细</h2><span class="tag">STEP 02</span></div>
+        <div class="card-head">
+            <h2>异常检测明细</h2>
+            <div style="display:flex;align-items:center;gap:10px">
+                <a class="btn btn-ghost" href="/export.csv" style="padding:7px 14px;font-size:12px">↓ 导出 CSV</a>
+                <span class="tag">STEP 02</span>
+            </div>
+        </div>
         <p class="summary-line" style="margin:0 0 14px">
             基于规则库识别敏感路径探测、注入载荷、扫描器 UA、危险方法、服务端错误、目录扫描与高频访问；
             共命中 <b>{{ stats.anomaly_total }}</b> 条，下表展示前 <b>{{ stats.anomalies|length }}</b> 条。
