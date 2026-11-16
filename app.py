@@ -10,7 +10,9 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 
 # 明细表最多渲染的条数，避免大文件拖垮页面（统计仍基于全部数据）
 PREVIEW_LIMIT = 100
-DEMO_LOG_PATH = Path(__file__).resolve().parent / "logs" / "demo.log"
+BASE_DIR = Path(__file__).resolve().parent
+DEMO_LOG_PATH = BASE_DIR / "logs" / "demo.log"
+STRESS_LOG_PATH = BASE_DIR / "logs" / "stress_10000.log"
 
 
 def _empty_page(filename="", error=None):
@@ -72,7 +74,7 @@ def index():
 
 @app.route("/demo")
 def demo():
-    """一键加载内置演示日志，便于现场演示。"""
+    """一键加载内置演示日志，便于现场展示。"""
     if not DEMO_LOG_PATH.exists():
         return _empty_page(error="演示日志不存在，请检查 logs/demo.log。")
 
@@ -80,6 +82,18 @@ def demo():
         records, failed_lines = parse_log_file(fh)
 
     return _analysis_page(records, failed_lines, "demo.log（内置演示数据）")
+
+
+@app.route("/stress")
+def stress():
+    """一键加载万条压力测试日志，验证大文件处理能力。"""
+    if not STRESS_LOG_PATH.exists():
+        return _empty_page(error="压力测试日志不存在，请检查 logs/stress_10000.log。")
+
+    with STRESS_LOG_PATH.open("rb") as fh:
+        records, failed_lines = parse_log_file(fh)
+
+    return _analysis_page(records, failed_lines, "stress_10000.log（万条压力测试）")
 
 
 @app.errorhandler(413)
