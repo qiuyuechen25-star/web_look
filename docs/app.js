@@ -265,6 +265,23 @@
         URL.revokeObjectURL(url);
     }
 
+
+    // 给 hex / rgb 颜色附加透明度，用于 ECharts 渐变
+    function withAlpha(color, alpha) {
+        color = String(color || '').trim();
+        if (color.startsWith('#')) {
+            let hex = color.slice(1);
+            if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+            const r = parseInt(hex.slice(0, 2), 16);
+            const g = parseInt(hex.slice(2, 4), 16);
+            const b = parseInt(hex.slice(4, 6), 16);
+            return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+        }
+        const m = color.match(/\d+/g);
+        if (m && m.length >= 3) return 'rgba(' + m[0] + ',' + m[1] + ',' + m[2] + ',' + alpha + ')';
+        return color;
+    }
+
     function themeColors() {
         const s = getComputedStyle(document.documentElement);
         return {
@@ -323,8 +340,8 @@
                 itemStyle: { color: c.primary },
                 areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: c.primary.replace(')', ', 0.38)').replace('rgb', 'rgba') },
-                        { offset: 1, color: c.primary.replace(')', ', 0.02)').replace('rgb', 'rgba') }
+                        { offset: 0, color: withAlpha(c.primary, 0.38) },
+                        { offset: 1, color: withAlpha(c.primary, 0.02) }
                     ])
                 }
             }]
